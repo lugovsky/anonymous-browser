@@ -1,0 +1,88 @@
+name: CI
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --no-fund
+      - name: Build and package
+        run: |
+          mkdir artifacts
+          npm pack --pack-destination artifacts
+          cd artifacts
+          sha256sum *.tgz > SHA256SUMS
+      - name: Install the tarball in a fresh consumer
+        run: |
+          package_path="$(realpath artifacts/*.tgz)"
+          consumer_dir="$(mktemp -d)"
+          cd "$consumer_dir"
+          npm init -y
+          npm install --no-fund "$package_path"
+          node <<'NODE'
+          const assert = require('node:assert/strict');
+          const fs = require('node:fs');
+          const { createRequire } = require('node:module');
+          const api = require('@lugovsky/anonymous-browser');
+          assert.equal(typeof api.createBrowser, 'function');
+          const packageRequire = createRequire(require.resolve('@lugovsky/anonymous-browser/package.json'));
+          const humanRequire = createRequire(packageRequire.resolve('@humanjs/playwright/package.json'));
+          const driver = humanRequire('playwright/package.json');
+          assert.equal(driver.name, 'patchright');
+          assert.equal(driver.version, '1.62.3');
+          assert.equal(packageRequire('patchright').chromium, humanRequire('playwright').chromium);
+          assert(fs.existsSync(humanRequire('ffmpeg-static')));
+          NODE
+          node --input-type=module -e "import { createBrowser } from '@lugovsky/anonymous-browser'; if (typeof createBrowser !== 'function') process.exit(1)"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: package
+          path: artifacts/*
+
+  docker:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: docker build -t anonymous-browser .
+      - name: Check the Linux runtime imports
+        run: |
+          docker run --rm anonymous-browser node --input-type=module -e "import { createBrowser } from '@lugovsky/anonymous-browser'; import GoLogin from 'gologin'; if (typeof createBrowser !== 'function' || typeof GoLogin !== 'function') process.exit(1)"
+          docker run --rm anonymous-browser node -e "require('node:child_process').execFileSync(require('ffmpeg-static'), ['-version'], { stdio: 'ignore' })"
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [package, docker]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Verify version tag
+        run: node -e "if ('v' + require('./package.json').version !== process.env.GITHUB_REF_NAME) throw new Error('Tag and package version differ')"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: package
+          path: artifacts
+      - name: Publish release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd artifacts
+          sha256sum --check SHA256SUMS
+          gh release create "$GITHUB_REF_NAME" *.tgz SHA256SUMS \
+            --repo "$GITHUB_REPOSITORY" --verify-tag \
+            --title "$GITHUB_REF_NAME" --generate-notes
