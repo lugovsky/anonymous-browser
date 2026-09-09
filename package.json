@@ -1,21 +1,34 @@
 {
   "name": "@lugovsky/anonymous-browser",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "GoLogin, Patchright and HumanJS browser sessions for Node.js",
   "license": "MIT",
   "author": "Vladimir Lugovsky",
-  "repository": { "type": "git", "url": "https://github.com/lugovsky/anonymous-browser.git" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lugovsky/anonymous-browser.git"
+  },
   "homepage": "https://github.com/lugovsky/anonymous-browser#readme",
   "bugs": "https://github.com/lugovsky/anonymous-browser/issues",
   "type": "commonjs",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
     "./package.json": "./package.json"
   },
-  "files": ["dist", "scripts/patch-patchright.cjs", "THIRD_PARTY.md", "docs/validation.md"],
-  "engines": { "node": ">=22" },
+  "files": [
+    "dist",
+    "scripts/patch-patchright.cjs",
+    "THIRD_PARTY.md",
+    "docs/validation.md"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "build": "tsc",
     "postinstall": "node scripts/patch-patchright.cjs",

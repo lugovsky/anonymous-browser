@@ -6,7 +6,7 @@ export { BrowserSession } from "./session.js";
 export { BrowserLaunchError, ProfileNotFoundError } from "./lifecycle.js";
 export { prepareOrbita, type PreparedOrbita } from "./orbita.js";
 export type { BrowserOptions, SessionOptions, BrowserPage, CleanupResult, Logger } from "./types.js";
-export type { Page, Locator, BrowserContext } from "patchright";
+export type { Page, Locator, BrowserContext, Request, Response } from "patchright";
 export type { Human } from "@humanjs/playwright";
 
 export class AnonymousBrowser {

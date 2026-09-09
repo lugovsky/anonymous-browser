@@ -9,7 +9,7 @@ A TypeScript library for GoLogin profiles controlled through Patchright, with Hu
 Requires Node.js 22 or later. Linux amd64 is the container target; macOS is available for local development. Automatic Orbita preparation supports Linux and macOS.
 
 ```sh
-npm install --save-exact https://github.com/lugovsky/anonymous-browser/releases/download/v0.2.0/lugovsky-anonymous-browser-0.2.0.tgz
+npm install --save-exact https://github.com/lugovsky/anonymous-browser/releases/download/v0.2.1/lugovsky-anonymous-browser-0.2.1.tgz
 ```
 
 Commit your application's `package-lock.json`. GitHub release assets are publicly downloadable without npm or GitHub credentials. This package is distributed as an npm-compatible tarball; it is not published to the npm registry.
@@ -94,6 +94,25 @@ docker run --rm --init --platform linux/amd64 \
 ```
 
 The Dockerfile installs Chromium's Linux system libraries and compiles the package. Orbita downloads on first use; mount a writable volume at `/home/node/.gologin` to retain its cache. The image runs as the `node` user. Do not copy host `node_modules` into Linux images because HumanJS's FFmpeg binary and GoLogin's native modules depend on the installation platform.
+
+### Headed mode under Xvfb
+
+For a headed browser in a Linux container without a GPU, install `xvfb` and `xauth` in the consuming image, run the application under Xvfb, and explicitly select ANGLE's SwiftShader renderer:
+
+```ts
+const session = await browser.startSession({
+  profileId,
+  headless: false,
+  extraArgs: ["--use-gl=angle", "--use-angle=swiftshader"],
+});
+// Use session.newPage(); always await session.close() in finally.
+```
+
+For example, `xvfb-run -a --server-args="-screen 0 1920x1080x24 -nolisten tcp" node app.mjs` supplies the display; choose its screen dimensions to match the profile. Keep Docker's `--init` option as shown above: the launcher smoke check stalled with `xvfb-run` as PID 1 and succeeded under Docker's init process. The base image does not include Xvfb or start a display server.
+
+With v0.2.0 and Orbita 151, these two flags restored WebGL 1/2 under Xvfb and passed all 31 Sannysoft checks. Removing `--disable-gpu` alone did not restore WebGL. The configuration works through the existing `extraArgs` option with the package's default flags intact.
+
+SwiftShader renders on the CPU and has [Chromium's documented performance and security tradeoffs](https://chromium.googlesource.com/chromium/src/+/main/docs/gpu/swiftshader.md). Select it for a runtime that needs software rendering; it is not a global headed-mode default. This diagnostic did not require `--enable-unsafe-swiftshader`. See [validation details](docs/validation.md) for scope and limitations.
 
 ## Compartment
 

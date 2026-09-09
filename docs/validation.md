@@ -1,5 +1,33 @@
 # Release validation
 
+## v0.2.1 — Xvfb guidance and consumer types
+
+This patch release documents the verified Xvfb software-rendering configuration and exports Patchright's `Request` and `Response` types for consuming applications. Dependency versions and browser runtime behavior are unchanged from v0.2.0. The browser diagnostics below apply to that unchanged runtime; release CI validates packaging, consumer imports and the Linux container.
+
+## v0.2.0 — Sannysoft and Xvfb follow-up
+
+Validated on 2026-09-09 using the released package, Node 22.23.2, Linux amd64, Orbita 151, GoLogin 3.0.4, Patchright 1.63.0 and HumanJS Playwright 0.11.0. The diagnostic image added Xvfb and xauth to the package's Docker image.
+
+Following the navigation and screenshot approach in [Patchright Python issue #46](https://github.com/Kaliiiiiiiiii-Vinyzu/patchright-python/issues/46), two disposable GoLogin profiles each passed all 11 basic and 20 fingerprint-scanner checks on Sannysoft in headless mode. The site's complete 33-field fingerprint object matched the GoLogin-only raw-CDP baseline in both comparisons. Default headed mode under Xvfb failed only WebGL Vendor and WebGL Renderer, including in the GoLogin-only baseline.
+
+A third disposable profile isolated the graphics configuration through five package launches:
+
+| Configuration | Sannysoft | WebGL 1/2 rendering |
+| --- | --- | --- |
+| Default headed under Xvfb | 29/31 | Contexts unavailable |
+| Headed, removing only `--disable-gpu` | 29/31 | Contexts unavailable |
+| Headed, adding `--use-gl=angle --use-angle=swiftshader` | 31/31 | Passed |
+| Same ANGLE flags, also removing `--disable-gpu` | 31/31 | Passed |
+| Default headless | 31/31 | Passed |
+
+The working headed configuration used the released `extraArgs` API with default flags intact. Both WebGL versions compiled vertex/fragment shaders, linked a program, drew a red triangle and returned `[255, 0, 0, 255]` through pixel readback with no GL error. CDP reported ANGLE SwiftShader internally; the site saw GoLogin's configured WebGL metadata. The headed/headless fingerprint comparison differed only in screen geometry. The diagnostic did not add `--enable-unsafe-swiftshader` or inject fingerprint overrides.
+
+A separate `xvfb-run` launcher smoke check stalled when the shell wrapper was Docker PID 1. The same command completed under `docker run --init`; retain that option when launching headed containers.
+
+The detector ran in the page's main world. Diagnostics waited for every scanner result, collected the site's own DOM/JSON through raw CDP without `Runtime.enable`, and captured native screenshots. All 12 browser launches across the three disposable profiles exited cleanly; package cleanup succeeded, no unhandled rejections occurred and all disposable profiles were deleted. Profile uploads were disabled between comparison cases. No production deployments or website posting/voting occurred.
+
+Sannysoft success is not proof of undetectability or a complete fingerprint audit. These checks do not validate proxy reputation, TLS/HTTP fingerprints, WebRTC leaks, behavioral detection or application-specific outcomes. SwiftShader uses CPU rendering and carries [Chromium's documented tradeoffs](https://chromium.googlesource.com/chromium/src/+/main/docs/gpu/swiftshader.md); the flags remain an explicit consumer choice. Physical desktop GPUs and ARM execution were not covered.
+
 ## v0.2.0 — dependency upgrade
 
 Validated on 2026-09-09 with Node 22.23.2, Linux amd64, Orbita 151, GoLogin 3.0.4, Patchright 1.63.0 and HumanJS Playwright 0.11.0. These were the latest npm releases of the three libraries at validation time.
