@@ -43,7 +43,7 @@ jobs:
           const humanRequire = createRequire(packageRequire.resolve('@humanjs/playwright/package.json'));
           const driver = humanRequire('playwright/package.json');
           assert.equal(driver.name, 'patchright');
-          assert.equal(driver.version, '1.62.3');
+          assert.equal(driver.version, packageRequire('./package.json').dependencies.patchright);
           assert.equal(packageRequire('patchright').chromium, humanRequire('playwright').chromium);
           assert(fs.existsSync(humanRequire('ffmpeg-static')));
           NODE

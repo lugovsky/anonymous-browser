@@ -1,6 +1,6 @@
 {
   "name": "@lugovsky/anonymous-browser",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "GoLogin, Patchright and HumanJS browser sessions for Node.js",
   "license": "MIT",
   "author": "Vladimir Lugovsky",
@@ -24,9 +24,9 @@
   },
   "dependencies": {
     "@humanjs/playwright": "0.11.0",
-    "gologin": "2.2.8",
-    "patchright": "1.62.3",
-    "playwright": "npm:patchright@1.62.3"
+    "gologin": "3.0.4",
+    "patchright": "1.63.0",
+    "playwright": "npm:patchright@1.63.0"
   },
   "devDependencies": {
     "@types/node": "^22.19.0",

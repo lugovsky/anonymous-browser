@@ -2,16 +2,17 @@ const { readFileSync, writeFileSync } = require("node:fs");
 const { dirname, join } = require("node:path");
 const { createRequire } = require("node:module");
 
-// Patchright 1.62.3 starts interception without awaiting it in CRPage's
+// Patchright 1.63.0 still starts interception without awaiting it in CRPage's
 // constructor. A closed CDP session then rejects outside page initialization.
+const PATCHRIGHT_VERSION = "1.63.0";
 const driverRequire = createRequire(require.resolve("patchright/package.json"));
 const packagePath = driverRequire.resolve("patchright-core/package.json");
 const humanRequire = createRequire(require.resolve("@humanjs/playwright/package.json"));
 const humanDriver = humanRequire("playwright/package.json");
-if (humanDriver.name !== "patchright" || humanDriver.version !== "1.62.3") {
-  throw new Error('HumanJS must resolve Patchright 1.62.3. Set the consumer dependency "playwright" to "npm:patchright@1.62.3" and reinstall.');
+if (humanDriver.name !== "patchright" || humanDriver.version !== PATCHRIGHT_VERSION) {
+  throw new Error(`HumanJS must resolve Patchright ${PATCHRIGHT_VERSION}. Set the consumer dependency "playwright" to "npm:patchright@${PATCHRIGHT_VERSION}" and reinstall.`);
 }
-if (JSON.parse(readFileSync(packagePath, "utf8")).version !== "1.62.3") {
+if (JSON.parse(readFileSync(packagePath, "utf8")).version !== PATCHRIGHT_VERSION) {
   throw new Error("Review the Patchright startup patch before changing its pinned version");
 }
 const bundlePath = join(dirname(packagePath), "lib/coreBundle.js");
