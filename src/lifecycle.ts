@@ -6,6 +6,7 @@ import { prepareOrbita } from "./orbita.js";
 import type { CleanupResult, Logger, SessionOptions } from "./types.js";
 import { applyWindowPlacement, captureWindowPlacement, restoreWindowPlacement, type WindowPlacementSnapshot } from "./window-placement.js";
 
+// Keep SDK implementation details out of the package's public declarations.
 interface GoLoginProfile {
   processSpawned: ChildProcess | null;
   restoreLastSession: boolean;
@@ -14,14 +15,6 @@ interface GoLoginProfile {
   stop(): Promise<void>;
   stopAndCommit(options: { posting: boolean }): Promise<void>;
 }
-
-type GoLoginConstructor = new (options: {
-  token: string;
-  profile_id: string;
-  executablePath: string;
-  browserMajorVersion: number;
-  extra_params: string[];
-}) => GoLoginProfile;
 
 export class BrowserLaunchError extends Error {
   constructor(error: unknown) {
@@ -88,7 +81,7 @@ export class ProfileLifecycle {
 export async function launchProfile(
   apiToken: string, options: SessionOptions, log: Logger,
 ): Promise<{ lifecycle: ProfileLifecycle; context: BrowserContext }> {
-  const { default: GoLogin } = await import("gologin") as { default: GoLoginConstructor };
+  const { default: GoLogin } = await import("gologin");
   const orbita = options.orbita ?? await prepareOrbita();
   const headless = options.headless ?? true;
   const extraArgs = [
@@ -101,8 +94,8 @@ export async function launchProfile(
       token: apiToken, profile_id: options.profileId,
       executablePath: orbita.executablePath, browserMajorVersion: orbita.majorVersion,
       extra_params: [...extraArgs],
-    });
-    // GoLogin 2.2.8 replaces a constructor option of false with true.
+    }) as GoLoginProfile & InstanceType<typeof GoLogin>;
+    // GoLogin 3.0.4 still replaces a constructor option of false with true.
     profile.restoreLastSession = options.restoreLastSession ?? !headless;
     const lifecycle = new ProfileLifecycle(profile);
     try {

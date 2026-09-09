@@ -9,12 +9,12 @@ A TypeScript library for GoLogin profiles controlled through Patchright, with Hu
 Requires Node.js 22 or later. Linux amd64 is the container target; macOS is available for local development. Automatic Orbita preparation supports Linux and macOS.
 
 ```sh
-npm install --save-exact https://github.com/lugovsky/anonymous-browser/releases/download/v0.1.0/lugovsky-anonymous-browser-0.1.0.tgz
+npm install --save-exact https://github.com/lugovsky/anonymous-browser/releases/download/v0.2.0/lugovsky-anonymous-browser-0.2.0.tgz
 ```
 
 Commit your application's `package-lock.json`. GitHub release assets are publicly downloadable without npm or GitHub credentials. This package is distributed as an npm-compatible tarball; it is not published to the npm registry.
 
-Installation runs a version-guarded Patchright patch and HumanJS installs `ffmpeg-static`, which downloads a platform-specific binary. Do not disable installation scripts. If your application already depends on `playwright`, set it to `npm:patchright@1.62.3` so HumanJS resolves the same driver. The installer checks this condition.
+Installation runs a version-guarded Patchright patch and HumanJS installs `ffmpeg-static`, which downloads a platform-specific binary. Do not disable installation scripts. If your application already depends on `playwright`, set it to `npm:patchright@1.63.0` so HumanJS resolves the same driver. The installer checks this condition.
 
 ## Use
 
@@ -68,7 +68,7 @@ Session options:
 - Downloads GoLogin's Orbita to `~/.gologin/browser` and reuses the cached version. `prepareOrbita()` can warm this cache. No separate Playwright browser distribution is installed.
 - Attaches with `noDefaults: true`, `isLocal: true` and a 30-second CDP deadline. Uses the existing default context without setting a viewport or replacing the profile's fingerprint or proxy.
 - Keeps the established container flags: `--no-sandbox`, `--disable-setuid-sandbox`, `--disable-dev-shm-usage`, `--disable-gpu`, plus `--headless=new` when headless. Extra flags can change browser behavior; keep them consistent across consumers.
-- Disables restored tabs for unattended headless sessions. GoLogin 2.2.8 ignores a constructor option of `false`, so the wrapper sets the instance property before launch.
+- Disables restored tabs for unattended headless sessions. GoLogin 3.0.4 still ignores a constructor option of `false`, so the wrapper sets the instance property before launch.
 - Closes task pages, sends browser-level CDP `Browser.close`, and waits five seconds for the owned process. If needed, signals only that child with SIGTERM and then SIGKILL, allowing five seconds each.
 - Restores saved window placement and calls GoLogin's profile-saving `stop()` only after process exit. If the process remains alive, skips profile saving and file removal. Driver disconnection is attempted in final cleanup.
 - Retries a connection failure once only after successful failed-launch cleanup. Never retries application operations.
@@ -105,11 +105,11 @@ This is an in-process library. It does not expose a remote browser-control serve
 
 ## Compatibility and releases
 
-The initial compatibility baseline is GoLogin `2.2.8`, Patchright `1.62.3`, HumanJS Playwright `0.11.0`, with `playwright` aliased to `npm:patchright@1.62.3`. Patchright does not officially support GoLogin; this is a maintained integration, not a guarantee of anonymity or undetectability. The pinned GoLogin dependency tree includes npm audit advisories; dependency upgrades need separate compatibility review.
+The current compatibility baseline is GoLogin `3.0.4`, Patchright `1.63.0`, HumanJS Playwright `0.11.0`, with `playwright` aliased to `npm:patchright@1.63.0`. Patchright does not officially support GoLogin; this is a maintained integration, not a guarantee of anonymity or undetectability. The pinned GoLogin dependency tree includes npm audit advisories; dependency upgrades need separate compatibility review.
 
 The postinstall patch joins Patchright's request-interception initialization promise to page initialization. This prevents a closed CDP session from producing an unhandled rejection during startup. It does not repair an unresponsive restored tab. Version and source checks deliberately fail when an upgrade needs review.
 
-CI compiles the package, installs its tarball in a fresh consumer, checks CommonJS/ESM imports and driver resolution, and builds the Linux Docker image. See [initial validation](docs/validation.md) for the Linux browser diagnostic and its limits. Browser/profile compatibility requires separate diagnostics with disposable profiles; CI does not contain GoLogin credentials or run live website actions.
+CI compiles the package, installs its tarball in a fresh consumer, checks CommonJS/ESM imports and driver resolution, and builds the Linux Docker image. See [release validation](docs/validation.md) for the Linux browser diagnostic and its limits. Browser/profile compatibility requires separate diagnostics with disposable profiles; CI does not contain GoLogin credentials or run live website actions.
 
 To release, update the package and lockfile version, commit and push, then push the matching `vX.Y.Z` tag. The [workflow](.github/workflows/ci.yml) waits for package and container checks and creates a public GitHub release containing the tarball and `SHA256SUMS`. Consumers upgrade by changing their pinned URL and lockfile through their normal review/deployment flow. Roll back by restoring the previous dependency version.
 
